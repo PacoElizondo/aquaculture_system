@@ -1,0 +1,16 @@
+%% Aquaculture system
+
+
+% initial values
+oxygen_0 = 6.0; % mg/L
+ph_0 = 7.2;
+temp_0 = 24;
+
+
+
+% dynamics
+o_dot = ca*aeration_input*(o_sat(temp)-oxygen) - fish_respiration - biofilter_demand;
+
+ph_dot = cs*scrubbing + biofilter_alkalinity - fish_co2;
+
+temp_dot = ambient_heat*(temp-temp_ext) + metabolic_heat - kw*water_cooling*(T-T_cool);
