@@ -1,7 +1,7 @@
 % from Weiss (https://doi.org/10.1016/0011-7471(70)90037-9)
 
 function O_mgL = o_sat(T_C)
-    T_K = T_C + 273.15;
+    T_K = max(T_C + 273.15, 274); 
     A1 = -173.4292;
     A2 = 249.6339;
     A3 = 143.3483;
