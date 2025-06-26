@@ -7,7 +7,7 @@ clear
 % Eibeling et. al. doi:10.1002/9781118250105.ch11
 % most constants are taken out from the same source. 
 delta_t = 10; %s
-sim_time = 864; % day
+sim_time = 864; % 10th of a day
 tank_volume = 46.6e3;
 
 % Initial values
@@ -15,9 +15,8 @@ oxygen_0 = 2.0; % mg/L
 co2_0 = 10; % mg/L
 ph_0 = 7.2;
 T_0 = 18; % Tank water temperature in celsius
-T_in_0 = 21.5; % Incoming water temperature
 T_ext = 18; % Ambient temperature
-T_in = 14;
+T_in = 14; % Cooling device water temperature
 
 
 % Constants
@@ -38,8 +37,9 @@ biofilter_alkalinity = 0.02; % mg/L  of CaCO3 from doi.org/10.1016/j.aquaeng.202
 alpha = 0.015; % Constant for buffer pH capacity
 
 % Temperature
-heat_constant = 1e-6;
-metabolic_heat = 5e-7; % celsius /kg*s
+heat_constant = 1e-6; % Heat loss radiation rate from tank to ambient
+ 
+metabolic_heat = 5e-7; % celsius /kg*s ( Properly, it would be around 1.52e-11) 
 
 biofilter_demand = 0.02;
 cool_water_flow = 1e-4; % m³/s ≈ 0.5 tank volume/day
@@ -49,9 +49,9 @@ cooling_rate = (cool_water_flow/tank_volume)*rate_of_change_per_degree*1000;
     
 
 % PID gains
-ox_kp = 0.8;
-ox_kd = 0.001;
-ox_ki = 0.0015;
+ox_kp = 0.6;
+ox_kd = 0.01;
+ox_ki = 0.0008;
 
 
 %state init
@@ -88,6 +88,8 @@ for i = 1:sim_time
                      + ox_ki * integral_error_oxygen;
 
 
+    % Relay control
+    
     if ph < 6.8 
         scrubbing_input = 1;
     elseif ph_dot > 0
@@ -106,33 +108,27 @@ for i = 1:sim_time
     % dynamics
 
     
-    % aeration_control = ox_kp*error_oxygen + ox_kd*derivative_error_oxygen + ox_ki*integral_error_oxygen;
     aeration_input = max(0,  aeration_efficiency*(o_sat(T)-oxygen)*aeration_control);
-    % aeration_input = 0.205;
-    % o_dot = aeration_input - biomass*fish_oxygen_consumption/(biomass*tank_volume) - biofilter_demand; % fish respiration depends on food intake (metabolism) considered constant
-    o_dot = aeration_input - fish_oxygen_consumption/(biomass*tank_volume) - biofilter_demand;
-    % if i < 20
-    %     ai = o_dot
-    % end
+    o_dot = aeration_input - fish_oxygen_consumption - biofilter_demand;
+
     
-    safe_ph = max(ph, 1e-3);    
+    safe_ph = max(ph, 5e-3);    
     ph_dot = ph_increase*scrubbing_input + biofilter_alkalinity - fish_co2_excretion - alpha*log(safe_ph);
     
     T_dot = -heat_constant*(T-T_ext)^4 + metabolic_heat*biomass - cooling_rate*water_cooling*(T-T_in);
-    scrubbing_input
-    ph_dot
 
-    oxygen = oxygen+o_dot*delta_t;
-    
+
+    % Update of the state
+    oxygen = oxygen + o_dot*delta_t;
     ph = ph + ph_dot*delta_t;
     T = T + T_dot*delta_t;
+
     if oxygen < 0, oxygen = 0; end
     if ph < 0, ph = 0; end
 
     error_oxygen_prev = error_oxygen;
 
     %plotting
-
     o2_plot(i) = oxygen;
     ph_plot(i) = ph;
     T_plot(i) = T;
