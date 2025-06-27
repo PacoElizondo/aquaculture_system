@@ -10,4 +10,4 @@ function O_mgL = o_sat(T_C)
     ln_O = A1 + A2 * (100 ./ T_K) + A3 * log(T_K / 100) + A4 * (T_K / 100).^2;
     O_molkg = exp(ln_O);  % mol/kg·atm
     O_mgL = O_molkg * 32 * 1000;  % convert to mg/L
-end
+end 

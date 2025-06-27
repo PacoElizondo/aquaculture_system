@@ -46,7 +46,7 @@ alpha = 0.015; % Constant for buffer pH capacity
 
 % Temperature
 heat_constant = 1e-6; % Heat loss radiation rate from tank to ambient
-metabolic_heat = 5e-7; % celsius /kg*s ( Properly, it would be around 1.52e-11) 
+metabolic_heat = 5e-7*biomass; % celsius /kg*s ( Properly, it would be around 1.52e-11) 
 cool_water_flow = 1e-4; % m³/s ≈ 0.5 tank volume/day
 rate_of_change_per_degree = 4186; % Joules/(kg * K)
 cooling_rate = (cool_water_flow/tank_volume)*rate_of_change_per_degree*1000;
@@ -116,7 +116,7 @@ for i = 1:sim_time
     safe_ph = max(ph, 5e-3);    
     ph_dot = ph_increase*scrubbing_input + biofilter_alkalinity - fish_co2_excretion - alpha*log(safe_ph);
     
-    T_dot = -heat_constant*(T-T_ext)^4 + metabolic_heat*biomass - cooling_rate*water_cooling*(T-T_in);
+    T_dot = -heat_constant*(T-T_ext)^4 + metabolic_heat - cooling_rate*water_cooling*(T-T_in);
 
 
     % Update of the state
