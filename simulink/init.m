@@ -1,0 +1,66 @@
+clear
+
+% Time parameters
+delta_t = 10;
+sim_time = 864; % 10th of a day
+
+
+% Initial values
+oxygen_0 = 2.0; % mg/L
+co2_0 = 10; % mg/L
+ph_0 = 7.4;
+T_0 = 21.5; % Tank water temperature in celsius
+T_ext = 18; % Ambient temperature
+T_in = 14; % Cooling device water temperature
+
+
+% Constants
+% from Eibeling et. al. doi:10.1002/9781118250105.ch11
+
+tank_volume = 46.6e3;
+biomass = 3000; % kg of fish
+
+% Oxygen
+oxygen_reference = 5.5; % Also mentioned in the assignment
+aeration_efficiency = 0.9*0.005;
+fish_oxygen_consumption = 630.7/(tank_volume*biomass); % mg per second considering 0.5kg of oxygen per kg of food fed.
+biofilter_demand = 0.02;
+
+
+% co2
+%co2_scrub_efficiency = 1; % percentage from
+%doi.org/10.1016/j.aquaeng.2024.102407  this might have been usefull if
+%modeling co2 as a part of the state
+co2_scrub = 0.05; % mg/L best possible result
+ph_increase = 0.01; % measurment; ignores the efficiency of the scrub efficiency
+fish_co2_excretion = 1.375*fish_oxygen_consumption; % mg 
+biofilter_alkalinity = 0.02; % mg/L  of CaCO3 from doi.org/10.1016/j.aquaeng.2024.102407
+alpha = 0.015; % Constant for buffer pH capacity
+
+
+% Temperature
+heat_constant = 1e-6; % Heat loss radiation rate from tank to ambient
+metabolic_heat = 5e-7; % celsius /kg*s ( Properly, it would be around 1.52e-11) 
+cool_water_flow = 1e-4; % m³/s ≈ 0.5 tank volume/day
+rate_of_change_per_degree = 4186; % Joules/(kg * K)
+cooling_rate = (cool_water_flow/tank_volume)*rate_of_change_per_degree*1000;
+    
+
+% PID gains
+ox_kp = 2;
+ox_kd = 0.01;
+ox_ki = 0.02;
+
+
+%state init
+oxygen = oxygen_0;
+ph = ph_0;
+T = T_0;
+T_dot = 0;
+ph_dot = 0;
+
+error_oxygen_prev = - oxygen - oxygen_reference ;
+integral_error_oxygen = 0;
+
+water_cooling = 0;
+scrubbing_input = 0;

@@ -1,14 +1,17 @@
 %% Aquaculture system
 close all
 clear
+
 % we will consider a tank of 46.6m^3 (cylindrical 7m diameter and 1.2m
 % depth as per the mid stage of fish growth. No fish growth is
 % considered. Food feed is 109kg per day. Obtained from
 % Eibeling et. al. doi:10.1002/9781118250105.ch11
 % most constants are taken out from the same source. 
+
+% Time parameters
 delta_t = 10; %s
 sim_time = 864; % 10th of a day
-tank_volume = 46.6e3;
+
 
 % Initial values
 oxygen_0 = 2.0; % mg/L
@@ -22,37 +25,36 @@ T_in = 14; % Cooling device water temperature
 % Constants
 % from Eibeling et. al. doi:10.1002/9781118250105.ch11
 
+tank_volume = 46.6e3;
 biomass = 3000; % kg
+
+% Oxygen
 oxygen_reference = 5.5; % Also mentioned in the assignment
 aeration_efficiency = 0.9*0.005; 
-co2_scrub = 0.05; % mg/L best possible result
-base_k_a = 0.005;  % typical fine bubble baseline [1/s]
+fish_oxygen_consumption = 630.7/(tank_volume*biomass); % mg per second considering 0.5kg of oxygen per kg of food fed.
+biofilter_demand = 0.02;
+
+% CO2
 %co2_scrub_efficiency = 1; % percentage from
 %doi.org/10.1016/j.aquaeng.2024.102407  this might have been usefull if
 %modeling co2 as a part of the state
 ph_increase = 0.01; % measurment; ignores the efficiency of the scrub efficiency
-fish_oxygen_consumption = 630.7/(tank_volume*biomass); % mg per second considering 0.5kg of oxygen per kg of food fed.
+co2_scrub = 0.05; % mg/L best possible result
 fish_co2_excretion = 1.375*fish_oxygen_consumption; % mg 
 biofilter_alkalinity = 0.02; % mg/L  of CaCO3 from doi.org/10.1016/j.aquaeng.2024.102407
 alpha = 0.015; % Constant for buffer pH capacity
 
 % Temperature
 heat_constant = 1e-6; % Heat loss radiation rate from tank to ambient
- 
 metabolic_heat = 5e-7; % celsius /kg*s ( Properly, it would be around 1.52e-11) 
-
-biofilter_demand = 0.02;
 cool_water_flow = 1e-4; % m³/s ≈ 0.5 tank volume/day
 rate_of_change_per_degree = 4186; % Joules/(kg * K)
 cooling_rate = (cool_water_flow/tank_volume)*rate_of_change_per_degree*1000;
-
-    
 
 % PID gains
 ox_kp = 0.6;
 ox_kd = 0.01;
 ox_ki = 0.0008;
-
 
 %state init
 oxygen = oxygen_0;
@@ -78,6 +80,7 @@ T_plot = zeros(sim_time,1);
 
 for i = 1:sim_time
     
+    % Error 
     error_oxygen = oxygen - oxygen_reference;
     derivative_error_oxygen = (error_oxygen - error_oxygen_prev) / delta_t;
     integral_error_oxygen = integral_error_oxygen + error_oxygen * delta_t;
@@ -105,9 +108,7 @@ for i = 1:sim_time
         end
     end
 
-    % dynamics
-
-    
+    % Dynamics
     aeration_input = max(0,  aeration_efficiency*(o_sat(T)-oxygen)*aeration_control);
     o_dot = aeration_input - fish_oxygen_consumption - biofilter_demand;
 

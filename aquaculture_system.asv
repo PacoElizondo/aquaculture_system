@@ -39,7 +39,7 @@ alpha = 0.015; % Constant for buffer pH capacity
 % Temperature
 heat_constant = 1e-6; % Heat loss radiation rate from tank to ambient
  
-metabolic_heat = 5e-7; % celsius /kg*s ( Properly, it would be around 1.52e-11, due to  
+metabolic_heat = 5e-7; % celsius /kg*s ( Properly, it would be around 1.52e-11) 
 
 biofilter_demand = 0.02;
 cool_water_flow = 1e-4; % m³/s ≈ 0.5 tank volume/day
@@ -78,8 +78,8 @@ T_plot = zeros(sim_time,1);
 
 for i = 1:sim_time
     
-    error_oxygen = oxygen - oxygen_reference;
-    derivative_error_oxygen = (error_oxygen - error_oxygen_prev) / delta_t;
+    error_oxygen = oxygen_reference - oxygen;
+    derivative_error_oxygen = (error_oxygen_prev - error_oxygen ) / delta_t;
     integral_error_oxygen = integral_error_oxygen + error_oxygen * delta_t;
     
     % PID control
@@ -117,17 +117,18 @@ for i = 1:sim_time
     
     T_dot = -heat_constant*(T-T_ext)^4 + metabolic_heat*biomass - cooling_rate*water_cooling*(T-T_in);
 
-    oxygen = oxygen+o_dot*delta_t;
-    
+
+    % Update of the state
+    oxygen = oxygen + o_dot*delta_t;
     ph = ph + ph_dot*delta_t;
     T = T + T_dot*delta_t;
+
     if oxygen < 0, oxygen = 0; end
     if ph < 0, ph = 0; end
 
     error_oxygen_prev = error_oxygen;
 
     %plotting
-
     o2_plot(i) = oxygen;
     ph_plot(i) = ph;
     T_plot(i) = T;
